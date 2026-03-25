@@ -333,6 +333,8 @@ export async function probeDatabaseConnection() {
 }
 
 export async function getMerchantConsoleSnapshot(): Promise<MerchantConsoleSnapshot> {
+  const missingTenantMessage = "No installed tenant was found yet.";
+
   try {
     const shopConnection = await prisma.shopConnection.findFirst({
       where: {
@@ -404,11 +406,7 @@ export async function getMerchantConsoleSnapshot(): Promise<MerchantConsoleSnaps
     });
 
     if (!shopConnection || !shopConnection.tenant.brandProfile || !shopConnection.tenant.contentPolicy) {
-      if (webEnv.demoMode) {
-        return createDemoSnapshot("No installed tenant was found yet.");
-      }
-
-      throw new Error("No installed tenant was found yet.");
+      return createDemoSnapshot(missingTenantMessage);
     }
 
     const tenant = shopConnection.tenant;
@@ -530,8 +528,10 @@ export async function getMerchantConsoleSnapshot(): Promise<MerchantConsoleSnaps
       usageRows: usage.usageRows,
     };
   } catch (error) {
-    if (webEnv.demoMode) {
-      return createDemoSnapshot(error instanceof Error ? error.message : "Unknown database error");
+    const message = error instanceof Error ? error.message : "Unknown database error";
+
+    if (webEnv.demoMode || message === missingTenantMessage) {
+      return createDemoSnapshot(message);
     }
 
     throw error;

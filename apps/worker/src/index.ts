@@ -8,6 +8,21 @@ import { dispatchJob } from "./jobs";
 import { markJobRunCompleted, markJobRunFailed, markJobRunRunning } from "./persistence";
 import { createRedisConnection, queueName } from "./queue";
 
+function isTruthy(value: string | undefined) {
+  if (!value) {
+    return false;
+  }
+
+  return ["1", "true", "yes", "on"].includes(value.toLowerCase());
+}
+
+function stayAliveInDegradedMode(reason: string) {
+  console.warn(`Worker degraded mode enabled: ${reason}`);
+  setInterval(() => {
+    console.log("Worker degraded mode active; queue startup is intentionally bypassed.");
+  }, 5 * 60 * 1000);
+}
+
 function maybeStartHealthServer() {
   const rawPort = process.env.PORT;
   if (!rawPort) {
@@ -40,6 +55,12 @@ function maybeStartHealthServer() {
 
 async function main() {
   maybeStartHealthServer();
+
+  if (isTruthy(process.env.BLOG_SAAS_WORKER_DEGRADED_MODE)) {
+    stayAliveInDegradedMode("BLOG_SAAS_WORKER_DEGRADED_MODE is set");
+    return;
+  }
+
   const connection = createRedisConnection();
 
   const worker = new Worker(
