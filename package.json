@@ -1,0 +1,25 @@
+{
+  "name": "blog-saas",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace @blog-saas/web",
+    "dev:worker": "npm run dev --workspace @blog-saas/worker",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "vitest run",
+    "db:validate": "prisma validate --schema packages/db/prisma/schema.prisma",
+    "prompt:export": "tsx scripts/export-airtable-seed.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "prisma": "^6.7.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.4"
+  }
+}

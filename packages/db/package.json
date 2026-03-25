@@ -1,0 +1,9 @@
+{
+  "name": "@blog-saas/db",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "dependencies": {
+    "@prisma/client": "^6.7.0"
+  }
+}

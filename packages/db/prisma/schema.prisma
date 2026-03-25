@@ -1,0 +1,252 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TenantStatus {
+  active
+  paused
+  disabled
+}
+
+enum SubscriptionStatus {
+  trialing
+  active
+  past_due
+  canceled
+}
+
+enum DraftStatus {
+  idea
+  researching
+  draft_ready
+  awaiting_approval
+  scheduled
+  rejected
+  published
+  failed
+}
+
+enum PublishStatus {
+  queued
+  publishing
+  published
+  failed
+}
+
+enum JobStatus {
+  queued
+  running
+  completed
+  failed
+}
+
+enum JobKind {
+  topic_backlog_generate
+  topic_research
+  draft_generate
+  draft_edit
+  faq_finalize
+  image_generate
+  await_approval
+  publish_shopify
+  sync_metrics
+}
+
+enum UsageMetric {
+  draft_generated
+  image_generated
+  publish_completed
+}
+
+model Tenant {
+  id              String           @id @default(uuid())
+  name            String
+  slug            String           @unique
+  countryCode     String           @default("IE")
+  status          TenantStatus     @default(active)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  brandProfile    BrandProfile?
+  contentPolicy   ContentPolicy?
+  schedules       PublishSchedule[]
+  shopConnections ShopConnection[]
+  subscriptions   Subscription[]
+  topics          Topic[]
+  drafts          Draft[]
+  imageAssets     ImageAsset[]
+  promptTemplates PromptTemplate[]
+  jobRuns         JobRun[]
+  usageEntries    UsageLedger[]
+}
+
+model ShopConnection {
+  id                   String    @id @default(uuid())
+  tenantId             String
+  tenant               Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  shopDomain           String    @unique
+  shopifyShopId        String?
+  accessTokenEncrypted String
+  scope                String
+  installedAt          DateTime  @default(now())
+  uninstalledAt        DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+model Subscription {
+  id                  String             @id @default(uuid())
+  tenantId            String
+  tenant              Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  shopifySubscriptionId String?          @unique
+  planKey             String
+  status              SubscriptionStatus @default(trialing)
+  monthlyDraftLimit   Int
+  monthlyImageLimit   Int
+  monthlyPublishLimit Int
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+}
+
+model BrandProfile {
+  id                String   @id @default(uuid())
+  tenantId          String   @unique
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  brandName         String
+  primaryDomain     String
+  marketCountryCode String   @default("IE")
+  preferredSpelling String   @default("en-IE")
+  voiceSummary      String
+  internalLinkRules Json
+  complianceNotes   Json
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model ContentPolicy {
+  id                 String   @id @default(uuid())
+  tenantId           String   @unique
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  approvalRequired   Boolean  @default(true)
+  defaultLanguage    String   @default("en")
+  searchLocale       String   @default("google.ie")
+  imageProvider      String   @default("gemini")
+  llmProvider        String   @default("openai")
+  maxDraftsPerDay    Int      @default(3)
+  publishCadenceHours Json
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model PublishSchedule {
+  id               String   @id @default(uuid())
+  tenantId         String   @unique
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  timezone         String   @default("Europe/Dublin")
+  localHours       Json
+  approvalRequired Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Topic {
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title           String
+  keyword         String
+  status          String   @default("backlog")
+  researchSummary Json?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  drafts          Draft[]
+}
+
+model Draft {
+  id               String        @id @default(uuid())
+  tenantId         String
+  tenant           Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  topicId          String
+  topic            Topic         @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  title            String
+  bodyMarkdown     String        @default("")
+  bodyHtml         String        @default("")
+  faqMarkdown      String        @default("")
+  ctaMarkdown      String        @default("")
+  notes            String?
+  status           DraftStatus   @default(idea)
+  publishStatus    PublishStatus @default(queued)
+  approvedBy       String?
+  approvedAt       DateTime?
+  rejectedBy       String?
+  rejectedAt       DateTime?
+  rejectionReason  String?
+  shopifyArticleId String?
+  liveUrl          String?
+  publishedAt      DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  imageAssets      ImageAsset[]
+}
+
+model ImageAsset {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  draftId     String
+  draft       Draft    @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  provider    String
+  prompt      String
+  storageKey  String
+  altText     String
+  createdAt   DateTime @default(now())
+}
+
+model PromptTemplate {
+  id           String   @id @default(uuid())
+  tenantId     String?
+  tenant       Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  key          String
+  version      Int
+  usedIn       Json
+  formatLabel  String?
+  systemPrompt String
+  isDefault    Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  @@unique([tenantId, key, version])
+}
+
+model JobRun {
+  id            String    @id @default(uuid())
+  tenantId      String
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  jobKind       JobKind
+  correlationId String    @unique
+  attempt       Int       @default(1)
+  status        JobStatus @default(queued)
+  payload       Json
+  lastError     String?
+  scheduledFor  DateTime?
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model UsageLedger {
+  id            String      @id @default(uuid())
+  tenantId      String
+  tenant        Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  metric        UsageMetric
+  quantity      Float
+  estimatedCost Float       @default(0)
+  correlationId String
+  modelName     String?
+  occurredAt    DateTime    @default(now())
+}
