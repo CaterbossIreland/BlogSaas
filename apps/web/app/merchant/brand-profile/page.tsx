@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { BrandProfileForm } from "../../../components/brand-profile-form";
 import { Panel } from "../../../components/panel";
 import { getMerchantConsoleSnapshot } from "../../../lib/merchant-console";
@@ -40,18 +42,24 @@ export default async function BrandProfilePage({ searchParams }: BrandProfilePag
       </Panel>
 
       <Panel title="Voice Summary">
-        <BrandProfileForm
-          tenantId={snapshot.tenant.id}
-          initialValues={{
-            brandName: snapshot.brandProfile.brandName,
-            primaryDomain: snapshot.shop.primaryDomain,
-            marketCountryCode: snapshot.brandProfile.marketCountryCode,
-            preferredSpelling: snapshot.brandProfile.preferredSpelling,
-            voiceSummary: snapshot.brandProfile.voiceSummary,
-            internalLinkRules: snapshot.brandProfile.internalLinkRules,
-            complianceNotes: snapshot.brandProfile.complianceNotes,
-          }}
-        />
+        {snapshot.source === "demo" ? (
+          <p style={{ margin: 0, color: "#374151", lineHeight: 1.7 }}>
+            Connect a Shopify store from <Link href="/install">the install page</Link> to enable brand profile editing for a real tenant.
+          </p>
+        ) : (
+          <BrandProfileForm
+            tenantId={snapshot.tenant.id}
+            initialValues={{
+              brandName: snapshot.brandProfile.brandName,
+              primaryDomain: snapshot.shop.primaryDomain,
+              marketCountryCode: snapshot.brandProfile.marketCountryCode,
+              preferredSpelling: snapshot.brandProfile.preferredSpelling,
+              voiceSummary: snapshot.brandProfile.voiceSummary,
+              internalLinkRules: snapshot.brandProfile.internalLinkRules,
+              complianceNotes: snapshot.brandProfile.complianceNotes,
+            }}
+          />
+        )}
       </Panel>
     </section>
   );

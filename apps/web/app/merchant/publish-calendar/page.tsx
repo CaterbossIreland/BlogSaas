@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Panel } from "../../../components/panel";
 import { PublishScheduleForm } from "../../../components/publish-schedule-form";
 import { SummaryCard } from "../../../components/summary-card";
@@ -28,14 +30,20 @@ export default async function PublishCalendarPage({ searchParams }: PublishCalen
         title="Publish Calendar"
         description="Publish windows are stored per tenant and used by queued publish jobs rather than hard-coded cron combinations."
       >
-        <PublishScheduleForm
-          tenantId={snapshot.tenant.id}
-          initialValues={{
-            timezone: snapshot.publishSchedule.timezone,
-            localHours: snapshot.publishSchedule.localHours,
-            approvalRequired: snapshot.contentPolicy.approvalRequired,
-          }}
-        />
+        {snapshot.source === "demo" ? (
+          <p style={{ margin: 0, color: "#374151", lineHeight: 1.7 }}>
+            Connect a Shopify store from <Link href="/install">the install page</Link> to set live publish windows and approval rules.
+          </p>
+        ) : (
+          <PublishScheduleForm
+            tenantId={snapshot.tenant.id}
+            initialValues={{
+              timezone: snapshot.publishSchedule.timezone,
+              localHours: snapshot.publishSchedule.localHours,
+              approvalRequired: snapshot.contentPolicy.approvalRequired,
+            }}
+          />
+        )}
       </Panel>
     </section>
   );

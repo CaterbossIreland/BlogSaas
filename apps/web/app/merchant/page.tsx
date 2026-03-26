@@ -3,6 +3,7 @@ import { StatusBadge } from "../../components/status-badge";
 import { SummaryCard } from "../../components/summary-card";
 import { getMerchantConsoleSnapshot } from "../../lib/merchant-console";
 import { resolveTenantSlug, type PageSearchParams } from "../../lib/tenant-query";
+import Link from "next/link";
 
 type MerchantHomePageProps = {
   searchParams: PageSearchParams;
@@ -91,6 +92,18 @@ export default async function MerchantHomePage({ searchParams }: MerchantHomePag
           </div>
         </Panel>
       </div>
+
+      {snapshot.source === "demo" ? (
+        <Panel
+          title="No store installed yet"
+          description="The merchant console is showing demo data until a Shopify store is connected."
+          action={<Link href="/install">Connect a store</Link>}
+        >
+          <p style={{ margin: 0, color: "#374151", lineHeight: 1.7 }}>
+            Use the install flow to connect a real Shopify store. Once OAuth completes, this workspace switches from demo mode to that tenant's live settings and content data.
+          </p>
+        </Panel>
+      ) : null}
     </section>
   );
 }

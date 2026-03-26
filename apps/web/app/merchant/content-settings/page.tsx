@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { ContentPolicyForm } from "../../../components/content-policy-form";
 import { Panel } from "../../../components/panel";
 import { SummaryCard } from "../../../components/summary-card";
@@ -24,15 +26,21 @@ export default async function ContentSettingsPage({ searchParams }: ContentSetti
         title="Content Settings"
         description="Prompt versions, cadence, and provider choices are configured per tenant instead of being scattered across Airtable and n8n."
       >
-        <ContentPolicyForm
-          tenantId={snapshot.tenant.id}
-          initialValues={{
-            searchLocale: snapshot.contentPolicy.searchLocale,
-            llmProvider: snapshot.contentPolicy.llmProvider,
-            imageProvider: snapshot.contentPolicy.imageProvider,
-            maxDraftsPerDay: snapshot.contentPolicy.maxDraftsPerDay,
-          }}
-        />
+        {snapshot.source === "demo" ? (
+          <p style={{ margin: 0, color: "#374151", lineHeight: 1.7 }}>
+            Connect a Shopify store from <Link href="/install">the install page</Link> to edit content settings for a live tenant.
+          </p>
+        ) : (
+          <ContentPolicyForm
+            tenantId={snapshot.tenant.id}
+            initialValues={{
+              searchLocale: snapshot.contentPolicy.searchLocale,
+              llmProvider: snapshot.contentPolicy.llmProvider,
+              imageProvider: snapshot.contentPolicy.imageProvider,
+              maxDraftsPerDay: snapshot.contentPolicy.maxDraftsPerDay,
+            }}
+          />
+        )}
       </Panel>
     </section>
   );
