@@ -2,12 +2,41 @@ import crypto from "node:crypto";
 
 import { getShopifyApiKey, getShopifyApiSecret, getShopifyAppUrl, webEnv } from "./env";
 
-export function buildShopifyAuthorizeUrl(shop: string) {
+export const SHOPIFY_OAUTH_STATE_COOKIE = "blog_saas_shopify_oauth_state";
+
+export function normalizeShopifyShopDomain(rawShop: string) {
+  const cleaned = rawShop
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .replace(/\/.*$/, "");
+
+  if (!cleaned) {
+    return "";
+  }
+
+  if (cleaned.endsWith(".myshopify.com")) {
+    return cleaned;
+  }
+
+  return `${cleaned}.myshopify.com`;
+}
+
+export function isValidShopifyShopDomain(shop: string) {
+  return /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.myshopify\.com$/.test(shop);
+}
+
+export function createShopifyOauthState() {
+  return crypto.randomUUID();
+}
+
+export function buildShopifyAuthorizeUrl(shop: string, state = createShopifyOauthState()) {
   const url = new URL(`https://${shop}/admin/oauth/authorize`);
   url.searchParams.set("client_id", getShopifyApiKey());
   url.searchParams.set("scope", webEnv.shopifyScopes);
   url.searchParams.set("redirect_uri", `${getShopifyAppUrl()}/auth/shopify/callback`);
-  url.searchParams.set("state", crypto.randomUUID());
+  url.searchParams.set("state", state);
   return url.toString();
 }
 

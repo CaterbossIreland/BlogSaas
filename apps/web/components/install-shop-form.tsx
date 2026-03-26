@@ -2,6 +2,29 @@
 
 import { useState } from "react";
 
+function normalizeShopInput(rawShop: string) {
+  const cleaned = rawShop
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .replace(/\/.*$/, "");
+
+  if (!cleaned) {
+    return "";
+  }
+
+  if (cleaned.endsWith(".myshopify.com")) {
+    return cleaned;
+  }
+
+  return `${cleaned}.myshopify.com`;
+}
+
+function isValidMyShopifyDomain(shop: string) {
+  return /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.myshopify\.com$/.test(shop);
+}
+
 const fieldStyle = {
   width: "100%",
   borderRadius: 12,
@@ -15,7 +38,8 @@ const fieldStyle = {
 export function InstallShopForm() {
   const [shop, setShop] = useState("");
 
-  const normalizedShop = shop.trim().replace(/^https?:\/\//, "");
+  const normalizedShop = normalizeShopInput(shop);
+  const isValid = normalizedShop ? isValidMyShopifyDomain(normalizedShop) : false;
   const authorizeHref = normalizedShop ? `/auth/shopify/start?shop=${encodeURIComponent(normalizedShop)}` : "#";
 
   return (
@@ -31,23 +55,29 @@ export function InstallShopForm() {
         <input
           value={shop}
           onChange={(event) => setShop(event.target.value)}
-          placeholder="your-store.myshopify.com"
+          placeholder="your-store or your-store.myshopify.com"
           style={fieldStyle}
         />
       </label>
 
+      {normalizedShop ? (
+        <p style={{ margin: 0, color: isValid ? "#166534" : "#991b1b" }}>
+          {isValid ? `OAuth will start for ${normalizedShop}` : "Enter a valid Shopify subdomain, for example your-store.myshopify.com"}
+        </p>
+      ) : null}
+
       <div style={{ display: "flex", alignItems: "center", gap: ".9rem", flexWrap: "wrap" }}>
         <button
           type="submit"
-          disabled={!normalizedShop}
+          disabled={!isValid}
           style={{
             border: 0,
             borderRadius: 999,
             padding: ".85rem 1.25rem",
-            background: normalizedShop ? "#0f172a" : "#94a3b8",
+            background: isValid ? "#0f172a" : "#94a3b8",
             color: "#fff",
             fontWeight: 700,
-            cursor: normalizedShop ? "pointer" : "not-allowed",
+            cursor: isValid ? "pointer" : "not-allowed",
           }}
         >
           Connect Shopify

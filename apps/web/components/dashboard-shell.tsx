@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import type { PropsWithChildren } from "react";
+
+import type { ConnectedTenantSummary } from "../lib/merchant-console";
 
 const links = [
   ["Overview", "/merchant"],
@@ -19,9 +22,15 @@ const links = [
   ["Install Store", "/install"],
 ] as const;
 
-export function DashboardShell({ children }: PropsWithChildren) {
+type DashboardShellProps = PropsWithChildren<{
+  tenants: ConnectedTenantSummary[];
+}>;
+
+export function DashboardShell({ children, tenants }: DashboardShellProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const tenant = searchParams.get("tenant");
+  const activeTenant = tenants.find((item) => item.slug === tenant) ?? null;
 
   const withTenant = (href: string) => {
     if (!tenant || !href.startsWith("/merchant")) {
@@ -64,6 +73,57 @@ export function DashboardShell({ children }: PropsWithChildren) {
         <p style={{ color: "#cbd5e1", lineHeight: 1.6 }}>
           Agency-first content operations for multi-tenant Shopify blog automation.
         </p>
+        <div
+          style={{
+            marginTop: "1rem",
+            padding: ".9rem",
+            borderRadius: 16,
+            background: "rgba(148, 163, 184, 0.12)",
+            display: "grid",
+            gap: ".65rem",
+          }}
+        >
+          <div style={{ display: "grid", gap: ".2rem" }}>
+            <span style={{ fontSize: ".76rem", textTransform: "uppercase", letterSpacing: ".08em", color: "#93c5fd" }}>
+              Active tenant
+            </span>
+            <strong>{activeTenant?.name ?? "Demo preview"}</strong>
+            <span style={{ color: "#cbd5e1", fontSize: ".92rem" }}>
+              {activeTenant?.shopDomain ?? "Install a Shopify store to manage a live tenant."}
+            </span>
+          </div>
+          <label style={{ display: "grid", gap: ".35rem", color: "#e2e8f0", fontSize: ".92rem" }}>
+            Switch store
+            <select
+              value={activeTenant?.slug ?? ""}
+              onChange={(event) => {
+                const nextSlug = event.target.value;
+                if (!nextSlug) {
+                  router.push("/merchant");
+                  return;
+                }
+                router.push(`/merchant?tenant=${encodeURIComponent(nextSlug)}`);
+              }}
+              style={{
+                width: "100%",
+                borderRadius: 12,
+                border: "1px solid rgba(148, 163, 184, 0.3)",
+                padding: ".75rem .85rem",
+                fontSize: ".95rem",
+                fontFamily: "inherit",
+                background: "#0b1220",
+                color: "#f8fafc",
+              }}
+            >
+              <option value="">Demo / no tenant selected</option>
+              {tenants.map((item) => (
+                <option key={item.id} value={item.slug}>
+                  {item.name} ({item.shopDomain})
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
         <nav style={{ display: "grid", gap: ".35rem", marginTop: "1.75rem" }}>
           {links.map(([label, href]) => (
             <Link

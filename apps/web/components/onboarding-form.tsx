@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 type OnboardingFormProps = {
@@ -51,6 +52,7 @@ function parseLocalHours(value: string) {
 }
 
 export function OnboardingForm({ tenantId, tenantSlug, initialValues }: OnboardingFormProps) {
+  const router = useRouter();
   const [brandName, setBrandName] = useState(initialValues.brandName);
   const [primaryDomain, setPrimaryDomain] = useState(initialValues.primaryDomain);
   const [marketCountryCode, setMarketCountryCode] = useState(initialValues.marketCountryCode);
@@ -125,6 +127,8 @@ export function OnboardingForm({ tenantId, tenantSlug, initialValues }: Onboardi
       }
 
       setMessage("Setup saved. Open the merchant console to review drafts, topics, and schedules.");
+      router.push(merchantHref);
+      router.refresh();
     });
   };
 
